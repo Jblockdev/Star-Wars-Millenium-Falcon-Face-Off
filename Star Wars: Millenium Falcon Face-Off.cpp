@@ -29,6 +29,8 @@ struct Character {
     string name;
     Move *moves;
     int health;
+    bool has_super_blaster = false;
+    float super_blaster_damage; 
 };
 
 // Define some helper functions for the game flow
@@ -61,12 +63,10 @@ bool is_game_over(Character &user, Character &AI) {
     // Check if the game is over (i.e., either user has 0 or less health)
     if (user.health <= 0) {
         cout << AI.name << " has defeated " << user.name << " and will keep the Millennium Falcon!" << endl;
-        cout << AI.name << " finished the battle with " << AI.health << "%" << " health left" << endl;
         return true;
 
     } else if (AI.health <= 0) {
         cout << user.name << " has defeated " << AI.name << " and is returning to Bespin in a new ride!" << endl;
-        cout << user.name << " finished the battle with " << user.health << "%" << " health left" << endl;
         return true;
 
     } else {
@@ -91,18 +91,39 @@ void game_loop(Character &user, Character &AI) {
             cout << AI.name << " has " << AI.health << "%" << " remaining." << endl;
         }
 
+
+        if (rand() % 10 == 0) {
+
+            if (!user.has_super_blaster && AI.has_super_blaster) {
+
+                bool super_blaster_to_user = (rand() / double(RAND_MAX)) > 0.5;
+                Character &character = super_blaster_to_user ? user : AI;
+                character.has_super_blaster = true;
+                cout << "A Super Blaster has been dropped! " << character.name << " has picked it up." << endl;
+
+            }
+
+        }
+
         // Calculate and apply damage to the defender based on the attacker's selected move
         Move move = get_move(player_turn ? user : AI);
 
-        int damage = rand() % (move.max_damage - move.min_damage + 1) + move.min_damage;
-        (player_turn ? AI : user).health -= damage;
-
-        cout << (player_turn ? user.name : AI.name) << " used " << move.name << " and dealt " << damage << "%" << endl;
-        game_over = is_game_over(user, AI);
-
-        player_turn = !player_turn;
-
-        cout << endl;
+         int damage = rand() % (move.max_damage - move.min_damage + 1) + move.min_damage;
+        if (player_turn) {
+            if (user.has_super_blaster) {
+                damage *= 2;
+                user.has_super_blaster = false;
+                cout << user.name << " used the Super Blaster! The next attack will be regular." << endl;
+            }
+            AI.health -= damage;
+        } else {
+            if (AI.has_super_blaster) {
+                damage *= 2;
+                AI.has_super_blaster = false;
+                cout << AI.name << " used the Super Blaster! The next attack will be regular." << endl;
+            }
+            user.health -= damage;
+        }
     }
 }
 
